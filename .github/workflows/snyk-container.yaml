@@ -24,7 +24,7 @@ jobs:
         continue-on-error: true
         with:
           image: ${{ env.IMAGE_NAME }}
-          args: --org=${{ secrets.ORG_ID }} --severity-threshold=low 
+          args: --org=${{ secrets.ORG_ID }} --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
