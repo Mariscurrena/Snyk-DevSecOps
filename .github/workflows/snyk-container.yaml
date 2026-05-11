@@ -20,7 +20,7 @@ jobs:
 
       - name: Snyk Check
         uses: snyk/actions/docker@master
-        id: snyk
+        id: snyk-container
         continue-on-error: true
         with:
           image: ${{ env.IMAGE_NAME }}
@@ -29,8 +29,10 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Show Snyk Output
+        if: steps.snyk-container.outcome == 'failure'
         run: |
-          echo "Snyk Scan Status: ${{ steps.snyk.outcome }}"
+            echo "Snyk detected High or Critical Issues. Breaking the build..."
+            exit 1
 
   iac-security:
     runs-on: ubuntu-latest
