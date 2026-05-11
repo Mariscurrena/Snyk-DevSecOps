@@ -40,7 +40,6 @@ jobs:
         with:
           image: ${{ env.IMAGE_NAME }}
           args: >
-            --file=Dockerfile 
             --org=${{ secrets.ORG_ID }} 
             --severity-threshold=high
             --sarif-file-output=snyk-container.sarif

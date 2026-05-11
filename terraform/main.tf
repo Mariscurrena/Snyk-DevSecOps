@@ -9,7 +9,7 @@ resource "aws_s3_bucket" "test_bucket" {
 # Vulnerability: Bucket with public ACL
 resource "aws_s3_bucket_acl" "example" {
   bucket = aws_s3_bucket.test_bucket.id
-  acl    = "public-read" 
+  acl    = "public-read"
 }
 
 # Vulnerability: No server cipher
