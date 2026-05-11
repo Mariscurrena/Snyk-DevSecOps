@@ -1,0 +1,110 @@
+name: Snyk Container and IaC Scan
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+      - ".gitignore"
+      - ".terraform.lock.hcl"
+    workflow_dispatch:
+  
+env:
+  IMAGE_NAME: "test-latest"
+  ORG_ID: ${{ secrets.ORG_ID }}
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+permissions:
+  security-events: write # SARIF
+  contents: read
+
+jobs:
+  container-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker Image Build
+        run: docker build --no-cache -t ${{ env.IMAGE_NAME }} .
+
+      - name: Snyk Container Scan
+        id: container-snyk-scan
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          args: >
+            --file=Dockerfile 
+            --org=${{ secrets.ORG_ID }} 
+            --severity-threshold=high
+            --sarif-file-output=snyk-container.sarif
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-container.sarif
+
+      - name: Check Snyk Status
+        if: steps.container-snyk-scan.outcome == 'failure'
+        run: |
+          echo "Snyk detected High or Critical Issues. Breaking the build..."
+          exit 1
+
+  iac-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.12.2
+          terraform_wrapper: false
+
+      - name: Terraform Format
+        id: format
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -upgrade -backend-config=dev.tfbackend
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -input=false --var-file=dev.tfvars -out=output.tfplan && terraform show -no-color -json output.tfplan > plan_output.json
+
+      - name: IaC Security
+        id: snyk-iac
+        uses: snyk/actions/iac@master
+        continue-on-error: true
+        with:
+          file: plan_output.json
+          args: >
+            --org=${{ secrets.ORG_ID }} 
+            --severity-threshold=high
+            --sarif-file-output=snyk-iac.sarif
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-iac.sarif
+
+      - name: Check Snyk Status
+        if: steps.snyk-iac.outcome == 'failure'
+        run: |
+          echo "Snyk detected High or Critical Issues. Breaking the build..."
+          exit 1

@@ -1,0 +1,3 @@
+bucket = "tu-bucket-terraform-state"
+key    = "snyk-test/terraform.tfstate"
+region = "us-east-1"
