@@ -1,0 +1,33 @@
+name: Snyk Container
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch: 
+
+env:
+  IMAGE_NAME: "image:latest"
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+jobs:
+  debug-container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Image
+        run: docker build -t ${{ env.IMAGE_NAME }} .
+
+      - name: Snyk Check
+        uses: snyk/actions/docker@master
+        id: snyk
+        continue-on-error: true
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          args: --org=${{ secrets.ORG_ID }} --severity-threshold=low 
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Show Snyk Output
+        run: |
+          echo "Snyk Scan Status: ${{ steps.snyk.outcome }}"
