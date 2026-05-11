@@ -47,12 +47,6 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Upload result to GitHub Code Scanning
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: snyk.sarif
-
       - name: Check Snyk Status
         if: steps.container-snyk-scan.outcome == 'failure'
         run: |
@@ -104,15 +98,8 @@ jobs:
           args: >
             --org=${{ secrets.ORG_ID }} 
             --severity-threshold=high
-            --sarif-file-output=snyk-iac.sarif
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-      - name: Upload result to GitHub Code Scanning
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: snyk-iac.sarif
 
       - name: Check Snyk Status
         if: steps.snyk-iac.outcome == 'failure'
