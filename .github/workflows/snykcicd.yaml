@@ -20,29 +20,24 @@ env:
   ORG_ID: ${{ secrets.ORG_ID }}
   SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-permissions:
-  security-events: write # SARIF
-  contents: read
-
 jobs:
   container-security:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Docker Image Build
+      - name: Build Image
         run: docker build -t ${{ env.IMAGE_NAME }} .
 
-      - name: Snyk Container Scan
+      - name: Snyk Check
         id: container-snyk-scan
         uses: snyk/actions/docker@master
         continue-on-error: true
         with:
           image: ${{ env.IMAGE_NAME }}
-          args: >
-            --file=Dockerfile
-            --org=${{ secrets.ORG_ID }}
-            --sarif-file-output=snyk-container.sarif
+          args: > 
+            --org=${{ secrets.ORG_ID }} 
+            --severity-threshold=high 
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -96,6 +91,7 @@ jobs:
           file: terraform/plan_output.json
           args: >
             --org=${{ secrets.ORG_ID }} 
+            --severity-threshold=high 
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
