@@ -10,7 +10,7 @@ env:
   SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
 jobs:
-  debug-container:
+  container:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -67,3 +67,21 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan -input=false --var-file=dev.tfvars -out=output.tfplan && terraform show -no-color -json output.tfplan > plan_output.json
+
+      - name: IaC Security
+        id: snyk-iac
+        uses: snyk/actions/iac@master
+        continue-on-error: true
+        with:
+            file: terraform/plan_output.json
+            args: >
+                --org=${{ secrets.ORG_ID }} 
+                --severity-threshold=high 
+        env:
+            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Check Snyk Status
+        if: steps.snyk-iac.outcome == 'failure'
+        run: |
+            echo "Snyk detected High or Critical Issues. Breaking the build..."
+            exit 1
