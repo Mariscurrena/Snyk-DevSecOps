@@ -1,18 +1,18 @@
 name: Snyk Container and IaC Scan
 
 on:
-  push:
-    branches: [main]       
-    paths-ignore:          
-      - "README.md"
-      - ".gitignore"
-      - ".terraform.lock.hcl"
-  pull_request:
-    branches: [main]
-    paths-ignore:
-      - "README.md"
-      - ".gitignore"
-      - ".terraform.lock.hcl"
+  # push:
+  #   branches: [main]       
+  #   paths-ignore:          
+  #     - "README.md"
+  #     - ".gitignore"
+  #     - ".terraform.lock.hcl"
+  # pull_request:
+  #   branches: [main]
+  #   paths-ignore:
+  #     - "README.md"
+  #     - ".gitignore"
+  #     - ".terraform.lock.hcl"
   workflow_dispatch:
   
 env:
